@@ -392,8 +392,7 @@
 
 /datum/plant_gene/trait/battery/on_attackby(obj/item/reagent_containers/food/snacks/grown/G, obj/item/I, mob/user)
 	if(istype(I, /obj/item/stack/cable_coil))
-		var/obj/item/stack/cable_coil/C = I
-		if(C.use(5))
+		if(I.use_tool(src, user, 0, 5, skill_gain_mult = TRIVIAL_USE_TOOL_MULT))
 			to_chat(user, "<span class='notice'>You add some cable to [G] and slide it inside the battery encasing.</span>")
 			var/obj/item/stock_parts/cell/potato/pocell = new /obj/item/stock_parts/cell/potato(user.loc)
 			pocell.icon_state = G.icon_state

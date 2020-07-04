@@ -9,43 +9,59 @@ export const Vending = props => {
   const { ref } = config;
   let inventory;
   let custom = false;
-  const onstation = true;
-  if (data.extended_inventory && data.coin) {
-    inventory = [
-      ...data.product_records,
-      ...data.hidden_records,
-      ...data.coin_records,
-    ];
+  if (data.vending_machine_input) {
+    inventory = data.vending_machine_input;
+    custom = true;
   } else if (data.extended_inventory) {
     inventory = [
       ...data.product_records,
-      ...data.hidden_records,
-    ];
-  } else if (data.coin) {
-    inventory = [
-      ...data.product_records,
       ...data.coin_records,
+      ...data.hidden_records,
     ];
   } else {
     inventory = [
       ...data.product_records,
+      ...data.coin_records,
     ];
   }
   return (
     <Fragment>
-      {data.coin && (
-        <Section title="Coins">
-          <Button
-            content={"Take out the coin"}
-            onClick={() => act(ref, 'takeoutcoin')} />
+      {!!data.onstation && (
+        <Section title="User">
+          {data.user && (
+            <Box>
+              Welcome, <b>{data.user.name}</b>,
+              {' '}
+              <b>{data.user.job || "Unemployed"}</b>!
+              <br />
+              Your balance is <b>{data.user.cash} credits</b>.
+            </Box>
+          ) || (
+            <Box color="light-gray">
+              No registered ID card!<br />
+              Please contact your local HoP!
+            </Box>
+          )}
         </Section>
       )}
       <Section title="Products" >
         <Table>
           {inventory.map((product => {
+            const free = (
+              !data.onstation
+              || product.price === 0
+            );
+            const to_pay = (!product.premium
+              ? Math.round(product.price * data.cost_mult)
+              : product.price
+            );
+            const pay_text = (!product.premium
+              ? to_pay + ' cr' + data.cost_text
+              : to_pay + ' cr'
+            );
             return (
               <Table.Row key={product.name}>
-                <Table.Cell>
+                <Table.Cell collapsing>
                   {product.base64 ? (
                     <img
                       src={`data:image/jpeg;base64,${product.img}`}
@@ -55,15 +71,20 @@ export const Vending = props => {
                       }} />
                   ) : (
                     <span
-                      className={classes(['vending32x32', product.path])}
+                      className={classes([
+                        'vending32x32',
+                        product.path,
+                      ])}
                       style={{
                         'vertical-align': 'middle',
                         'horizontal-align': 'middle',
                       }} />
                   )}
-                  <b>{product.name}</b>
                 </Table.Cell>
-                <Table.Cell>
+                <Table.Cell bold>
+                  {product.name}
+                </Table.Cell>
+                <Table.Cell collapsing textAlign="center">
                   <Box color={custom
                     ? 'good'
                     : data.stock[product.name] <= 0
@@ -74,16 +95,28 @@ export const Vending = props => {
                     {data.stock[product.name]} in stock
                   </Box>
                 </Table.Cell>
-                <Table.Cell>
+                <Table.Cell collapsing textAlign="center">
                   {custom && (
                     <Button
-                      content={'Vend'}
+                      fluid
+                      content={data.access ? 'FREE' : product.price + ' cr'}
                       onClick={() => act(ref, 'dispense', {
                         'item': product.name,
                       })} />
                   ) || (
                     <Button
-                      content={'Vend'}
+                      fluid
+                      disabled={(
+                        data.stock[product.namename] === 0
+                          || (
+                            !free
+                            && (
+                              !data.user
+                              || to_pay > data.user.cash
+                            )
+                          )
+                      )}
+                      content={!free ? pay_text : 'FREE'}
                       onClick={() => act(ref, 'vend', {
                         'ref': product.ref,
                       })} />

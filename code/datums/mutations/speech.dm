@@ -108,7 +108,6 @@
 		message = replacetext(message," drink "," liquid ")
 		message = replacetext(message," feminist "," empowered woman ")
 		message = replacetext(message," i hate you "," you're a mean ")
-		message = replacetext(message," jew "," jewish ")
 		message = replacetext(message," shit "," shiz ")
 		message = replacetext(message," crap "," poo ")
 		message = replacetext(message," slut "," tease ")
@@ -278,10 +277,10 @@
 
 /datum/mutation/human/stoner/on_acquiring(mob/living/carbon/human/owner)
 	..()
-	owner.grant_language(/datum/language/beachbum)
-	owner.remove_language(/datum/language/common)
+	owner.grant_language(/datum/language/beachbum, TRUE, TRUE, LANGUAGE_STONER)
+	owner.add_blocked_language(subtypesof(/datum/language) - /datum/language/beachbum, LANGUAGE_STONER)
 
 /datum/mutation/human/stoner/on_losing(mob/living/carbon/human/owner)
 	..()
-	owner.grant_language(/datum/language/common)
-	owner.remove_language(/datum/language/beachbum)
+	owner.remove_language(/datum/language/beachbum, TRUE, TRUE, LANGUAGE_STONER)
+	owner.remove_blocked_language(subtypesof(/datum/language) - /datum/language/beachbum, LANGUAGE_STONER)

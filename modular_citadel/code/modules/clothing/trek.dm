@@ -18,7 +18,7 @@
 	mob_overlay_icon = 'modular_citadel/icons/mob/clothing/trek_mob_icon.dmi'
 	item_state = "trek_ds9_coat"
 	body_parts_covered = CHEST|GROIN|ARMS
-	mutantrace_variation = NONE
+	mutantrace_variation = STYLE_DIGITIGRADE|STYLE_NO_ANTHRO_ICON
 	permeability_coefficient = 0.50
 	allowed = list(
 		/obj/item/flashlight, /obj/item/analyzer,
@@ -47,7 +47,7 @@
 	mob_overlay_icon = 'modular_citadel/icons/mob/clothing/trek_mob_icon.dmi'
 	icon_state = "fedcoat"
 	item_state = "fedcoat"
-	mutantrace_variation = NONE
+	mutantrace_variation = STYLE_DIGITIGRADE|STYLE_NO_ANTHRO_ICON
 	blood_overlay_type = "coat"
 	body_parts_covered = CHEST|GROIN|ARMS
 	allowed = list(
@@ -113,6 +113,7 @@
 	mob_overlay_icon = 'modular_citadel/icons/mob/clothing/trek_mob_icon.dmi'
 	icon_state = "fedmodern"
 	item_state = "fedmodern"
+	mutantrace_variation = STYLE_DIGITIGRADE|STYLE_NO_ANTHRO_ICON
 	body_parts_covered = CHEST|GROIN|ARMS
 	allowed = list(
 		/obj/item/flashlight, /obj/item/analyzer,
@@ -161,3 +162,21 @@
 /obj/item/clothing/head/caphat/formal/fedcover/black
 		icon_state = "fedcapblack"
 		item_state = "fedcapblack"
+
+//orvilike caps
+/obj/item/clothing/head/kepi/orvi
+	name = "\improper Federation kepi"
+	desc = "A visored cap worn by all officers since 2550s."
+	icon_state = "kepi_ass"
+
+/obj/item/clothing/head/kepi/orvi/command
+	icon_state = "kepi_com"
+
+/obj/item/clothing/head/kepi/orvi/engsec
+	icon_state = "kepi_ops"
+
+/obj/item/clothing/head/kepi/orvi/medsci
+	icon_state = "kepi_medsci"
+
+/obj/item/clothing/head/kepi/orvi/service
+	icon_state = "kepi_srv"

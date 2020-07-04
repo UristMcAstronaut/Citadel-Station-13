@@ -343,7 +343,7 @@
 	icon = 'icons/obj/items_and_weapons.dmi'
 	icon_state = "disintegrate"
 	item_state = null
-	item_flags = NEEDS_PERMIT | ABSTRACT | DROPDEL | NO_ATTACK_CHAIN_SOFT_STAMCRIT
+	item_flags = NEEDS_PERMIT | ABSTRACT | DROPDEL
 
 	w_class = WEIGHT_CLASS_HUGE
 	throwforce = 0
@@ -454,16 +454,16 @@
 					S.emp_act(EMP_HEAVY)
 				else if(iscarbon(target))
 					var/mob/living/carbon/C = L
-					C.silent += CLAMP(12 - C.silent, 0, 6)
-					C.stuttering += CLAMP(30 - C.stuttering, 0, 15)
-					C.cultslurring += CLAMP(30 - C.cultslurring, 0, 15)
+					C.silent += clamp(12 - C.silent, 0, 6)
+					C.stuttering += clamp(30 - C.stuttering, 0, 15)
+					C.cultslurring += clamp(30 - C.cultslurring, 0, 15)
 					C.Jitter(15)
 			else					// cultstun no longer hardstuns + damages hostile cultists, instead debuffs them hard + deals some damage; debuffs for a bit longer since they don't add the clockie belligerent debuff
 				if(iscarbon(target))
 					var/mob/living/carbon/C = L
 					C.stuttering = max(10, C.stuttering)
 					C.drowsyness = max(10, C.drowsyness)
-					C.confused += CLAMP(20 - C.confused, 0, 10)
+					C.confused += clamp(20 - C.confused, 0, 10)
 				L.adjustBruteLoss(15)
 			to_chat(user, "<span class='cultitalic'>In an brilliant flash of red, [L] [iscultist(L) ? "writhes in pain" : "falls to the ground!"]</span>")
 		uses--
@@ -801,7 +801,7 @@
 					var/turf/T = get_turf(user)
 					qdel(src)
 					var/datum/action/innate/cult/spear/S = new(user)
-					var/obj/item/twohanded/cult_spear/rite = new(T)
+					var/obj/item/cult_spear/rite = new(T)
 					S.Grant(user, rite)
 					rite.spear_act = S
 					if(user.put_in_hands(rite))
