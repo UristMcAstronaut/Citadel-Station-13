@@ -244,6 +244,11 @@
 	glass_desc = "The father of all refreshments."
 	shot_glass_icon_state = "shotglassclear"
 
+/datum/reagent/water/on_mob_life(mob/living/carbon/M)
+	. = ..()
+	if(M.blood_volume)
+		M.blood_volume += 0.1 // water is good for you!
+
 /*
  *	Water reaction to turf
  */
@@ -334,6 +339,8 @@
 	return ..()
 
 /datum/reagent/water/holywater/on_mob_life(mob/living/carbon/M)
+	if(M.blood_volume)
+		M.blood_volume += 0.1 // water is good for you!
 	if(!data)
 		data = list("misc" = 1)
 	data["misc"]++
@@ -876,7 +883,7 @@
 	if(istype(O, /obj/item/stack/sheet/metal))
 		var/obj/item/stack/sheet/metal/M = O
 		reac_volume = min(reac_volume, M.amount)
-		new/obj/item/stack/tile/bronze(get_turf(M), reac_volume)
+		new/obj/item/stack/sheet/bronze(get_turf(M), reac_volume)
 		M.use(reac_volume)
 
 /datum/reagent/nitrogen
@@ -2190,13 +2197,6 @@
 		M.emote("nya")
 	if(prob(20))
 		to_chat(M, "<span class = 'notice'>[pick("Headpats feel nice.", "The feeling of a hairball...", "Backrubs would be nice.", "Whats behind those doors?")]</span>")
-	if(ishuman(M))
-		var/mob/living/carbon/human/H = M
-		var/list/adjusted = H.adjust_arousal(2,aphro = TRUE)
-		for(var/g in adjusted)
-			var/obj/item/organ/genital/G = g
-			to_chat(M, "<span class='userlove'>You feel like playing with your [G.name]!</span>")
-
 	..()
 
 /datum/reagent/preservahyde
@@ -2218,6 +2218,7 @@
 	color = "#FFFFFF" // rgb: 255, 255, 255
 	can_synth = FALSE
 	nutriment_factor = 0.5 * REAGENTS_METABOLISM
+	var/decal_path = /obj/effect/decal/cleanable/semen
 
 /datum/reagent/consumable/semen/reaction_turf(turf/T, reac_volume)
 	if(!istype(T))
@@ -2227,7 +2228,7 @@
 
 	var/obj/effect/decal/cleanable/semen/S = locate() in T
 	if(!S)
-		S = new(T)
+		S = new decal_path(T)
 	if(data["blood_DNA"])
 		S.add_blood_DNA(list(data["blood_DNA"] = data["blood_type"]))
 
@@ -2251,48 +2252,133 @@
 		blood_DNA |= S.blood_DNA
 	return ..()
 
-/datum/reagent/consumable/femcum
+/datum/reagent/consumable/semen/femcum
 	name = "Female Ejaculate"
 	description = "Vaginal lubricant found in most mammals and other animals of similar nature. Where you found this is your own business."
 	taste_description = "something with a tang" // wew coders who haven't eaten out a girl.
-	taste_mult = 2
-	data = list("donor"=null,"viruses"=null,"donor_DNA"=null,"blood_type"=null,"resistances"=null,"trace_chem"=null,"mind"=null,"ckey"=null,"gender"=null,"real_name"=null)
-	reagent_state = LIQUID
 	color = "#AAAAAA77"
-	can_synth = FALSE
-	nutriment_factor = 0.5 * REAGENTS_METABOLISM
+	decal_path = /obj/effect/decal/cleanable/semen/femcum
 
-/obj/effect/decal/cleanable/femcum
+/obj/effect/decal/cleanable/semen/femcum
 	name = "female ejaculate"
-	desc = null
-	gender = PLURAL
-	density = 0
-	layer = ABOVE_NORMAL_TURF_LAYER
-	icon = 'icons/obj/genitals/effects.dmi'
 	icon_state = "fem1"
 	random_icon_states = list("fem1", "fem2", "fem3", "fem4")
 	blood_state = null
 	bloodiness = null
 
-/obj/effect/decal/cleanable/femcum/Initialize(mapload)
-	. = ..()
-	dir = GLOB.cardinals
-	add_blood_DNA(list("Non-human DNA" = "A+"))
+/datum/reagent/determination
+	name = "Determination"
+	description = "For when you need to push on a little more. Do NOT allow near plants."
+	reagent_state = LIQUID
+	color = "#D2FFFA"
+	metabolization_rate = 0.75 * REAGENTS_METABOLISM // 5u (WOUND_DETERMINATION_CRITICAL) will last for ~17 ticks
+	/// Whether we've had at least WOUND_DETERMINATION_SEVERE (2.5u) of determination at any given time. No damage slowdown immunity or indication we're having a second wind if it's just a single moderate wound
+	var/significant = FALSE
+	self_consuming = TRUE
 
-/obj/effect/decal/cleanable/femcum/replace_decal(obj/effect/decal/cleanable/femcum/F)
-	if(F.blood_DNA)
-		blood_DNA |= F.blood_DNA
-	return ..()
+/datum/reagent/determination/on_mob_end_metabolize(mob/living/carbon/M)
+	if(significant)
+		var/stam_crash = 0
+		for(var/thing in M.all_wounds)
+			var/datum/wound/W = thing
+			stam_crash += (W.severity + 1) * 3 // spike of 3 stam damage per wound severity (moderate = 6, severe = 9, critical = 12) when the determination wears off if it was a combat rush
+		M.adjustStaminaLoss(stam_crash)
+	M.remove_status_effect(STATUS_EFFECT_DETERMINED)
+	..()
 
-/datum/reagent/consumable/femcum/reaction_turf(turf/T, reac_volume)
-	if(!istype(T))
-		return
-	if(reac_volume < 10)
-		return
+/datum/reagent/determination/on_mob_life(mob/living/carbon/M)
+	if(!significant && volume >= WOUND_DETERMINATION_SEVERE)
+		significant = TRUE
+		M.apply_status_effect(STATUS_EFFECT_DETERMINED) // in addition to the slight healing, limping cooldowns are divided by 4 during the combat high
 
-	var/obj/effect/decal/cleanable/femcum/S = locate() in T
-	if(!S)
-		S = new(T)
-	if(data["blood_DNA"])
-		S.add_blood_DNA(list(data["blood_DNA"] = data["blood_type"]))
+	volume = min(volume, WOUND_DETERMINATION_MAX)
+
+	for(var/thing in M.all_wounds)
+		var/datum/wound/W = thing
+		var/obj/item/bodypart/wounded_part = W.limb
+		if(wounded_part)
+			wounded_part.heal_damage(0.25, 0.25)
+		M.adjustStaminaLoss(-0.25*REM) // the more wounds, the more stamina regen
+	..()
+
+datum/reagent/eldritch
+	name = "Eldritch Essence"
+	description = "Strange liquid that defies the laws of physics"
+	taste_description = "Ag'hsj'saje'sh"
+	color = "#1f8016"
+
+/datum/reagent/eldritch/on_mob_life(mob/living/carbon/M)
+	if(IS_HERETIC(M))
+		M.drowsyness = max(M.drowsyness-5, 0)
+		M.AdjustAllImmobility(-40, FALSE)
+		M.adjustStaminaLoss(-15, FALSE)
+		M.adjustToxLoss(-3, FALSE)
+		M.adjustOxyLoss(-3, FALSE)
+		M.adjustBruteLoss(-3, FALSE)
+		M.adjustFireLoss(-3, FALSE)
+		if(ishuman(M) && M.blood_volume < BLOOD_VOLUME_NORMAL)
+			M.blood_volume += 3
+	else
+		M.adjustOrganLoss(ORGAN_SLOT_BRAIN, 3, 150)
+		M.adjustToxLoss(2, FALSE)
+		M.adjustFireLoss(2, FALSE)
+		M.adjustOxyLoss(2, FALSE)
+		M.adjustBruteLoss(2, FALSE)
+	holder.remove_reagent(type, 1)
+	return TRUE
+
+/datum/reagent/cellulose
+	name = "Cellulose Fibers"
+	description = "A crystaline polydextrose polymer, plants swear by this stuff."
+	reagent_state = SOLID
+	color = "#E6E6DA"
+	taste_mult = 0
+
+/datum/reagent/hairball
+	name = "Hairball"
+	description = "A bundle of keratinous bits and fibers, not easily digestible."
+	reagent_state = SOLID
+	can_synth = FALSE
+	metabolization_rate = 0.05 * REAGENTS_METABOLISM
+	taste_description = "wet hair"
+	var/amount = 0
+	var/knotted = FALSE
+
+/datum/reagent/hairball/on_mob_life(mob/living/carbon/M)
+	amount = M.reagents.get_reagent_amount(/datum/reagent/hairball)
+
+	if(amount < 10)
+		if(prob(10))
+			M.losebreath += 1
+			M.emote("cough")
+			to_chat(M, "<span class='notice'>You clear your throat.</span>")
+	else
+		if(!knotted)
+			to_chat(M, "<span class='notice'>You feel a knot in your stomach.</span>")
+			knotted = TRUE
+
+		if(prob(5 + amount * 0.5)) // don't want this to cause too much damage
+			M.losebreath += 2
+			to_chat(M, "<span class='notice'>You feel a knot in your throat.</span>")
+			M.emote("cough")
+
+		else if(prob(amount - 4))
+			to_chat(M, "<span class='warning'>Your stomach feels awfully bloated.</span>")
+			playsound(M,'sound/voice/catpeople/distressed.ogg', 50, FALSE)
+			M.visible_message("<span class='warning'>[M] seems distressed!.</span>", ignored_mobs=M)
+
+		else if(prob(amount - 8))
+			knotted = FALSE
+			playsound(M,'sound/voice/catpeople/puking.ogg', 110, FALSE)
+			M.Immobilize(30)
+			sleep(30) //snowflake but it works, don't wanna proc this
+			if(QDELETED(M) || QDELETED(src)) //this handles race conditions about m or src not existing.
+				return
+			M.visible_message("<span class='warning'>[M] throws up a hairball! Disgusting!</span>", ignored_mobs=M)
+			new /obj/item/toy/plush/hairball(get_turf(M))
+			to_chat(M, "<span class='notice'>Aaaah that's better!</span>")
+			SEND_SIGNAL(M, COMSIG_ADD_MOOD_EVENT, "cleared_stomach", /datum/mood_event/cleared_stomach, name)
+			M.reagents.del_reagent(/datum/reagent/hairball)
+			return
+	..()
 
